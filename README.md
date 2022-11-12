@@ -62,11 +62,11 @@ to training a fresh model with `fit` on a combined dataset.
 
 ## 4. writing a scientific report
 both negative or positive results are fine
-2. scientific report:
-    1. introduction
-    2. methods
-    3. experiment setup
-    4. results
-    5. conclusion
+
+1. introduction
+2. methods
+3. experiment setup
+4. results
+5. conclusion
 
 
