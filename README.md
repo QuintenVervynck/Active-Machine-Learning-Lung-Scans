@@ -14,9 +14,10 @@ wide range of Machine Learning models, as it is build on top of the scikit-learn
 
 [Active Learning for Medical Image Segmentation](https://arxiv.org/abs/2101.02323)
 
-other usefull websites
+other usefull links
 - https://huali.bioengineering.illinois.edu/active-learning-for-medical-image-annotation/
 - https://upcommons.upc.edu/bitstream/handle/2117/109304/active-deep-learning-medical-imaging.pdf?sequence=1&isAllowed=y
+- https://www.researchgate.net/publication/336488062_Active_Learning_Technique_for_Multimodal_Brain_Tumor_Segmentation_Using_Limited_Labeled_Images
 
 ## 2. Formulating a research question:
 
