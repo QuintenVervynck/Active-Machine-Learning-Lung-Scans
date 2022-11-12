@@ -25,6 +25,12 @@ already, and asking them to annotate **all** of the images they have, is just a 
 So if we would only have the ask them to annotate lets say 100 images instead of all 1000 images they had available,
 that would be a great improvement.
 
+One key difference with the standard way of training models with scikit-learn is that we'll use `partial_fit`
+for incrementally updating the parameters. Instead of just using `fit` which trains the model from start (so overwrites anything that was already there.
+So if you trained the model on `D_0`, and then `partial_fit` on `D_1`, this would be conceptually similar 
+to training a fresh model with `fit` on a combined dataset.
+(see [docs](https://scikit-learn.org/0.15/modules/scaling_strategies.html#incremental-learning))
+
 ## 3. designing and executing an experiment
 1. Gathering data
 2. Preparing that data
