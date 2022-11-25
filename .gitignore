@@ -1,1 +1,3 @@
 notebooks/fmnist
+**/__pycache__/*
+dataset/

@@ -14,8 +14,16 @@ RUN python -m bash_kernel.install
 
 WORKDIR /notebooks
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install numpy
+RUN pip install tensorflow
+RUN pip install keras
+RUN pip install matplotlib
+RUN pip install kaggle
+RUN pip install scikit-learn
+RUN pip install scikit-activeml
+RUN pip install pandas
+RUN pip install pillow
+RUN pip install scipy
 
 ARG ARG_GID
 ARG ARG_UID
