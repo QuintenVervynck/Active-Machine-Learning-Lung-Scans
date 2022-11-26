@@ -156,7 +156,7 @@ class Dataset():
                 index += 1
 
         y = np.concatenate([np.array([subfolder[:-1]] * len(self.data[subfolder + "images"])) for subfolder in self.subfolders])
-        y = np.array(list(map(self.to_classint, y))) # map labels to ints of labels
+        y = np.array(list(map(self.from_label, y))) # map labels to ints of labels
         print(f"  size of training data: {len(X)}")
         print(f"  size of training data labels: {len(y)}")
         self.X = X
