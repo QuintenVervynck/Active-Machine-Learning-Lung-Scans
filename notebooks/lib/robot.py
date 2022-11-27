@@ -14,7 +14,7 @@ from tensorflow.keras.losses import BinaryCrossentropy, categorical_crossentropy
 from sklearn import metrics
 from tensorflow.keras.models import load_model
 
-from dataset import Dataset
+from lib.dataset import Dataset
 
 
 class Robot():  
