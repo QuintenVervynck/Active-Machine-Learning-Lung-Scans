@@ -218,6 +218,8 @@ class Robot():
     y_train = None # the train labels
     y_valid = None # the validation labels
     y_test = None # the test labels
+
+    size = None  # the size of the dataset
     
     model = None # the machine learning model
     
@@ -229,41 +231,14 @@ class Robot():
             print("ROBOT: TF GPU CHECK")
             import tensorflow as tf
             print(tf.config.list_physical_devices())
-        elif mode == "quick-testrun":
-            print("ROBOT: QUICK TESTRUN")
-            print("ROBOT: prep data")
-            self.dataset = Dataset()
-            self.prep_data()
-            self.limit_size(10)
-            print("ROBOT: prep model")
-            self.prep_model_vgg()
-            print("ROBOT: train")
-            self.train(1, 10)
-            print("ROBOT: saving model")
-            self.model.save("models/quicktestrunmodel.h5")
-            print("ROBOT: test")
-            self.test()
-            self.confusion_matrix()
-            self.histogram_used_classes()
-        elif mode == "quick-testrun-load":
-            print("ROBOT: QUICK TESTRUN lOAD")
-            print("ROBOT: prep data")
-            self.dataset = Dataset()
-            self.prep_data()
-            self.limit_size(10)
-            print("ROBOT: load model")            
-            self.model = load_model('models/quicktestrunmodel.h5')
-            print("ROBOT: test")
-            self.test()
-            self.confusion_matrix()
         elif mode == "full-learn":
             print("ROBOT: FULL LEARN")
-            self.prep_model_vgg()
+            self.model = self.prep_model_vgg()
             print("ROBOT: prep data")
             self.dataset = Dataset()
             self.prep_data()
             print("ROBOT: train")
-            self.train(10,64)
+            self.train(self.X_train, self.y_train, 10, 64)
             print("ROBOT: saving model")
             self.model.save("models/full_learn.h5")
             print("ROBOT: test")
@@ -282,7 +257,7 @@ class Robot():
             self.confusion_matrix()
         elif mode == "al-learn":
             print("ROBOT: AL LEARN")
-            self.prep_model_vgg()
+            self.model = self.prep_model_vgg()
             print("ROBOT: prep data")
             self.dataset = Dataset()
             self.prep_data()
@@ -304,6 +279,25 @@ class Robot():
             print("ROBOT: test")
             self.test()
             self.confusion_matrix()
+        elif mode == "full-learn-acc-graph":
+            print("ROBOT: FULL LEARN ACC GRAPH")
+            print("ROBOT: prep data")
+            self.dataset = Dataset()
+            self.prep_data()
+            print("ROBOT: create models")
+            steps = [i for i in range(50, 1050, 50)] + [i for i in range(1100, 2001, 100)]
+            models = [self.prep_model_vgg() for _ in steps]
+            accs = []
+            used = []
+            print("ROBOT: train")
+            for i, model in enumerate(models):
+                print(f"ROBOT: training model {i+1}/{len(models)}")
+                self.model = model
+                used.append(self.train(self.X_train[:steps[i]], self.y_train[:steps[i]],3 ,64))
+                accs.append(self.test())
+            self.used = used
+            self.accs = accs
+            self.accuracy_graph(used, accs, "full-learn-acc-graph.png")
             
         else:
             print(f"ROBOT: UNKNOWN MODE '{mode}'")
@@ -311,6 +305,7 @@ class Robot():
 
     def prep_data(self, train_size=0, valid_size=0, test_size=0):
         self.X_train, self.X_valid, self.X_test, self.y_train, self.y_valid, self.y_test = self.dataset.split()
+        self.size = self.X_train.shape[0]
     
     def limit_size(self, size):
         self.X_train = self.X_train[:size]
@@ -319,23 +314,30 @@ class Robot():
         self.y_valid = self.y_valid[:size]
         self.X_test = self.X_test[:size]
         self.y_test = self.y_test[:size]
+        self.size = size
     
     def prep_model_vgg(self):
-        self.model = VGG16(weights=None, classes=3)
+        model = VGG16(weights=None, classes=3)
         opt = Adam(learning_rate=0.001)
-        self.model.compile(optimizer=opt, loss=categorical_crossentropy, metrics=['accuracy'])
+        model.compile(optimizer=opt, loss=categorical_crossentropy, metrics=['accuracy'])
+        return model
+
     
-    
-    def train(self, epochs, batch_size):
-        self.used = np.array(list(range(self.X_train.shape[0])))
+    def train(self, X_train, y_train, epochs, batch_size):
+        used = [0,0,0]
+        for x in y_train:
+            used[x] += 1
         self.model.fit(
-            x=self.X_train,
-            y=np.array(list(map(self.dataset.to_classlist, self.y_train))), 
-            epochs=epochs, 
+            x=X_train,
+            y=np.array(list(map(self.dataset.to_classlist, y_train))), 
+            epochs=epochs,
             batch_size=batch_size,
             validation_data=(self.X_valid, np.array(list(map(self.dataset.to_classlist, self.y_valid))))
         )
-        print(f"Used samples: {self.used.shape[0]}")
+        print(f"Used samples: {used[0]} {used[1]} {used[2]}")
+        self.used = used
+        return used
+
 
 
     def train_AL(self, epochs, batch_size):
@@ -391,7 +393,7 @@ class Robot():
                 count += 1
         self.acc = count / self.p_test.shape[0]
         print(f"Test accuracy: {self.acc}")
-
+        return self.acc
 
 
     def confusion_matrix(self, loc='confusion_matrix.png'):
@@ -411,9 +413,17 @@ class Robot():
         plt.xticks(ticks, labels)
         plt.savefig(loc)
         plt.show()
+    
+    def accuracy_graph(self, used, accs, loc="acc-graph.png"):
+        plt.suptitle("Accuracy graph (VGG16)")
+        plt.plot([sum(x) for x in used], accs)
+        plt.xlabel("Used samples")
+        plt.ylabel("Accuracy")
+        plt.savefig(loc)
+        plt.show()
 
 
 if __name__ == "__main__":
     Robot("tf-gpu-check")
     #Robot("full-learn")
-    Robot('al-learn')
+    Robot('full-learn-acc-graph')
