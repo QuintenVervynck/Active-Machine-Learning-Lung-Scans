@@ -1,0 +1,10 @@
+numpy
+tensorflow
+keras
+matplotlib
+kaggle
+scikit-learn
+scikit-activeml
+pandas
+pillow
+scipy
