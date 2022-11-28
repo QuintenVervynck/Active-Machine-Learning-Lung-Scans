@@ -17,7 +17,7 @@ if __name__ == "__main__":
         )
         with open("full_learn_acc_graph_checkpoints.txt", "a+") as f:
             f.write(f"{str(models[-1])}\n")
-            plt.suptitle("Accuracy graph (VGG16)")
+        plt.suptitle("Accuracy graph (VGG16)")
         plt.xlabel("Used samples")
         plt.ylabel("Accuracy")
         plt.plot([sum(m.used) for m in models], [m.acc for m in models])
