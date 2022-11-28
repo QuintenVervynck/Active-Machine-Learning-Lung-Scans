@@ -18,35 +18,38 @@ from lib.dataset import Dataset
 
 
 class Model():
-    model = None  # the underlying model
-    
-    used = [0, 0, 0] #  amount of imgs used per class
-    acc = 0.0  # the accuracy of the model on the test-set
-    
-    X_train = None  # the train data
-    X_valid = None  # the validation data
-    X_test = None  # the test data
-    y_train = None  # the train labels
-    y_test = None  # the test labels
-    y_valid = None  # the validation labels
-    
-    size = None  # the size of the training set
-    
-    p_test = None  # the predicted probabilities
-    
-    epochs=10  # the amount of epochs to train (the amount of times to go though the train data set)
-    batch_size=64  # the batch_size used during training
     
     def __init__(self, architecture:str="vgg16", dataset=None):
-        # create the internal model
         self.architecture = architecture
+        self.model = None  # the underlying model
+
+        self.dataset = dataset  # the dataset
+    
+        self.used = [0, 0, 0] #  amount of imgs used per class
+        self.acc = 0.0  # the accuracy of the model on the test-set
+
+        self.X_train = None  # the train data
+        self.X_valid = None  # the validation data
+        self.X_test = None  # the test data
+        self.y_train = None  # the train labels
+        self.y_test = None  # the test labels
+        self.y_valid = None  # the validation labels
+
+        self.size = None  # the size of the training set
+
+        self.p_test = None  # the predicted probabilities
+
+        self.epochs=10  # the amount of epochs to train (the amount of times to go though the train data set)
+        self.batch_size=64  # the batch_size used during training        
+        
+        # create the internal model
         if architecture == "vgg16":
             self.model = VGG16(weights=None, classes=3)
             self.model.compile(optimizer=Adam(learning_rate=0.001), loss=categorical_crossentropy, metrics=['accuracy'])
         else:
             raise ValueError(f"model architecture '{architecture}' does not exist.")
+        
         # prepare the data
-        self.dataset = dataset
         if self.dataset is None:
             self.dataset = Dataset()
         self.X_train, self.X_valid, self.X_test, self.y_train, self.y_valid, self.y_test = self.dataset.split()
@@ -58,7 +61,13 @@ class Model():
     def __repr__(self):
         return f"<Model {self.architecture}: used {sum(self.used)} {self.used}, acc {self.acc}>"
     
-    def limit_size(self, size):
+    def limit_training_data(self, size):
+        self.X_train = self.X_train[:size]
+        self.y_train = self.y_train[:size]
+        self.size = size
+        return self
+    
+    def limit_all_data(self, size):
         self.X_train = self.X_train[:size]
         self.y_train = self.y_train[:size]
         self.X_valid = self.X_valid[:size]
@@ -108,6 +117,14 @@ class Model():
         self.X_test = None
         self.y_train = None
         self.y_valid = None
+        self.size = None
+        return self
+    
+    def clean_full(self):
+        self.clean()
+        self.y_test = None  # used for confusion matrix
+        self.p_test = None  # used for confusion matrix
+        self.dataset = None  # used for histogram used classes
         return self
     
     def confusion_matrix(self, loc='confusion_matrix.png'):

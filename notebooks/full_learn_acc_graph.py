@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from lib.dataset import Dataset
 from lib.model import Model
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     print("FULL LEARN ACC GRAPH")
     dataset = Dataset()
         
@@ -11,9 +11,9 @@ if __name__ == "__main__":
     models = []
 
     for i, max_imgs in enumerate(steps):
-        print(f"TRAINING MODEL {i+1}/{len(models)} ON {max_imgs} IMGS")
+        print(f"TRAINING MODEL {i+1}/{len(steps)} ON {max_imgs} IMGS")
         models.append(
-            Model("vgg16", dataset).limit_size(max_imgs).train().test().clean()
+            Model("vgg16", dataset).limit_training_data(max_imgs).train().test().clean_full()
         )
         with open("full_learn_acc_graph_checkpoints.txt", "a+") as f:
             f.write(f"{str(models[-1])}\n")
