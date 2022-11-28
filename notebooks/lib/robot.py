@@ -3,6 +3,7 @@ import zipfile
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
+from math import ceil
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 os.environ['KAGGLE_USERNAME'] = 'dumpstertrash'
@@ -112,7 +113,7 @@ class Robot():
             print("ROBOT: prep data")
             self.dataset = Dataset()
             self.prep_data()
-            print("ROBOT: create models")
+            #print("ROBOT: create models")
             # steps = [i for i in range(50, 1050, 50)] + [i for i in range(1100, 2001, 100)]
             steps = [i for i in range(50, 300, 50)]
             accs = []
@@ -121,14 +122,8 @@ class Robot():
             for i in range(len(steps)):
                 print(f"ROBOT: training model {i+1}/{len(steps)}")
                 self.model = self.prep_model_vgg()
-                self.limit_size(steps[i])
-                used.append(self.train_AL(3, 8))
+                used.append(self.train_AL(self.X_train[:steps[i]], self.y_train[:steps[i]], 3, 8))
                 accs.append(self.test())
-                model.save("models/" + "model:" + str(i) + ".h5")
-                f = open("models/" + "model:" + str(i) + ".txt", "a")
-                f.write(str(accs))
-                f.write(str(used))
-                f.close()
             self.used = used
             self.accs = accs
             self.accuracy_graph(used, accs, "full-learn-acc-graph.png")
@@ -174,20 +169,24 @@ class Robot():
 
 
 
-    def train_AL(self, epochs, batch_size):
+    def train_AL(self, X_train, y_train, epochs, batch_size):
         query_size = 32
-        iterations = max(len(self.X_train) // query_size, 20)
+        iterations = min(ceil(len(self.X_train) / query_size), 20)
 
-        X = self.X_train
-        y = np.array(list(map(self.dataset.to_classlist, self.y_train)))
+        X = X_train
+        y = np.array(list(map(self.dataset.to_classlist, y_train)))
         y_valid_classlist = np.array(list(map(self.dataset.to_classlist, self.y_valid)))
         # models = [VGG16(weights=None, classes=3) for _ in range(iterations)]
         # [model.compile(optimizer=Adam(learning_rate=0.001), loss=categorical_crossentropy, metrics=['accuracy']) for model in models]
         model = VGG16(weights=None, classes=3)
         model.compile(optimizer=Adam(learning_rate=0.001), loss=categorical_crossentropy, metrics=['accuracy'])
         
+        used = [0,0,0]
+
         # train first model
         idxs = [i for i in range(query_size)]
+        for x in self.y_train[idxs]:
+            used[x] += 1
         X_train = X[idxs]
         y_train = y[idxs]
         X = np.delete(X, idxs, axis=0)
@@ -195,12 +194,14 @@ class Robot():
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(self.X_valid, y_valid_classlist))
         self.model = model
         self.test()
-        self.confusion_matrix(f"al-learn-confusion-matrix-{0}"+ str(datetime.now().isoformat("-", "minutes")) + ".png")
+        self.confusion_matrix(f"al-learn-conf-{0}-{str(datetime.now().isoformat('-', 'minutes'))}.png")
 
         for i in range(1, iterations):
             print(f"iteration {i}, {X.shape[0]} samples left")
             p = model.predict(X)
             idxs = np.max(p, axis=1).argsort()[:query_size]
+            for x in self.y_train[idxs]:
+                used[x] += 1
             X_train = np.concatenate((X_train, X[idxs]))
             y_train = np.concatenate((y_train, y[idxs]))
             X = np.delete(X, idxs, axis=0)
@@ -215,10 +216,11 @@ class Robot():
                 validation_data=(self.X_valid, y_valid_classlist))
             self.model = model
             self.test()
-            self.confusion_matrix(f"al-learn-confusion-matrix-{i}-{str(datetime.now().isoformat('-', 'minutes'))}.png")
+            self.confusion_matrix(f"al-learn-conf-{i}-{str(datetime.now().isoformat('-', 'minutes'))}.png")
             
         self.model = model
         print(f"Used samples: {iterations*query_size}")
+        return used
 
         
     def test(self):
