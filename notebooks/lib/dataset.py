@@ -34,7 +34,6 @@ class Dataset():
             
         print("Finished")
             
-
     def to_label(self, x:int):
         return self.names[x]
     
@@ -42,18 +41,14 @@ class Dataset():
     def from_label(self, x:str):
         return self.revnames[x]
     
-
     def to_classlist(self, x:int):
         l = [0.0, 0.0, 0.0]
         l[x] = 1.0
         return l
     
     
-    def from_classlist(self, x:[]):
+    def from_classlist(self, x):
         return np.argmax(x)
-
-
-
     def download(self):                    
         if not os.path.isfile(f"{self.path}/covid19-radiography-database.zip"):
             print("Downloading...")
@@ -62,18 +57,15 @@ class Dataset():
             api.authenticate()
             api.dataset_download_files('tawsifurrahman/covid19-radiography-database',
                                        path=self.path)
-
         if not os.path.isdir(f"{self.path}/COVID-19_Radiography_Dataset"):
             print("Unzipping...")
             with zipfile.ZipFile(f"{self.path}/covid19-radiography-database.zip","r") as zip_ref:
                 zip_ref.extractall(f"{self.path}/")
         
-
     def load_local(self):
         print("Loading local files...")
         # Three main subfolders: COVID, Normal, Viral Pneumonia
         path = f"{self.path}/COVID-19_Radiography_Dataset/"
-
         # Every subfolder has images and their masks
         for subfolder in self.subfolders:
             self.data[subfolder + "images"] = [path + subfolder + "images/" + image for image in os.listdir(path + subfolder + "images")]
@@ -81,9 +73,7 @@ class Dataset():
             print(f"  Number of images in {subfolder}: {len(self.data[subfolder + 'images'])}")
             print(f"  Number of masks in {subfolder}: {len(self.data[subfolder + 'masks'])}")
             self.size += len(self.data[subfolder + 'images'])
-
         print(f"  Total size: {str(self.size)}")
-
     
     def show_unprocessed_examples(self):
         if "COVID/images" not in self.data:
@@ -96,14 +86,11 @@ class Dataset():
                 examples_path += self.data[subfolder + version][0:num_images]
                 for image in examples_path[-num_images:]:
                     examples_images.append(plt.imread(image))
-
         _, axes = plt.subplots(nrows=len(self.subfolders) * len(self.versions), ncols=num_images, figsize=(10, 15))
         for ax, image, label in zip(axes.flatten(), examples_images, examples_path):
             ax.set_axis_off()
             ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
             ax.set_title("%s" % label.split("/")[-1])
-
-
     def restrict_size_per_class(self, size=1345):
         print("Restricting the number of images per class...")
         self.size = 3*size
@@ -172,26 +159,30 @@ class Dataset():
         print(f"Saving the preprocessed dataset...")
         np.save(f"{self.path}/x", self.X)
         np.save(f"{self.path}/y", self.y)
-
               
     def load(self):
         print(f"Loading local preprocessed dataset...")
         self.X = np.load(f"{self.path}/x.npy")
         self.y = np.load(f"{self.path}/y.npy")
-
     
     def split(self):
         # Split the dataset in training and test data
         # The data is found in self.X and self.y
-        X_train, X_test, y_train, y_test = train_test_split(
+        X_train, X_rem, y_train, y_rem = train_test_split(
             self.X, 
             self.y, 
-            test_size=0.2, 
+            train_size=0.8, 
             shuffle=True,
-            random_state=42,
-        )
+            random_state=42)
+        X_valid, X_test, y_valid, y_test = train_test_split(
+            X_rem,
+            y_rem,
+            train_size=0.5,
+            shuffle=True,
+            random_state=42)
+        
         print(f"X_train shape: {X_train.shape}")
-        print(f"X_test shape: {X_test.shape}")
+        print(f"X_valid & X_test shape: {X_test.shape}")
         print(f"y_train shape: {y_train.shape}")
-        print(f"y_test shape: {y_test.shape}")
-        return X_train, X_test, y_train, y_test
+        print(f"y_valid & y_test shape: {y_test.shape}")
+        return X_train, X_valid, X_test, y_train, y_valid, y_test

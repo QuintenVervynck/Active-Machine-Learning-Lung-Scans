@@ -3,7 +3,6 @@ import zipfile
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from datetime import datetime
 from sklearn.model_selection import train_test_split
 os.environ['KAGGLE_USERNAME'] = 'dumpstertrash'
 os.environ['KAGGLE_KEY'] = 'fc29a78761d58a50c7b50d71f3f3a3f2'
@@ -15,7 +14,7 @@ from tensorflow.keras.losses import BinaryCrossentropy, categorical_crossentropy
 from sklearn import metrics
 from tensorflow.keras.models import load_model
 
-from lib.dataset import Dataset
+from dataset import Dataset
 
 
 class Robot():  
@@ -47,7 +46,7 @@ class Robot():
             self.dataset = Dataset()
             self.prep_data()
             print("ROBOT: train")
-            self.train(self.X_train, self.y_train, 10, 8)
+            self.train(self.X_train, self.y_train, 10, 64)
             print("ROBOT: saving model")
             self.model.save("models/full_learn.h5")
             print("ROBOT: test")
@@ -107,31 +106,6 @@ class Robot():
             self.used = used
             self.accs = accs
             self.accuracy_graph(used, accs, "full-learn-acc-graph.png")
-        elif mode == "al-learn-acc-graph":
-            print("ROBOT: AL LEARN ACC GRAPH")
-            print("ROBOT: prep data")
-            self.dataset = Dataset()
-            self.prep_data()
-            print("ROBOT: create models")
-            # steps = [i for i in range(50, 1050, 50)] + [i for i in range(1100, 2001, 100)]
-            steps = [i for i in range(50, 300, 50)]
-            accs = []
-            used = []
-            print("ROBOT: train")
-            for i in range(len(steps)):
-                print(f"ROBOT: training model {i+1}/{len(steps)}")
-                self.model = self.prep_model_vgg()
-                self.limit_size(steps[i])
-                used.append(self.train_AL(3, 8))
-                accs.append(self.test())
-                model.save("models/" + "model:" + str(i) + ".h5")
-                f = open("models/" + "model:" + str(i) + ".txt", "a")
-                f.write(str(accs))
-                f.write(str(used))
-                f.close()
-            self.used = used
-            self.accs = accs
-            self.accuracy_graph(used, accs, "full-learn-acc-graph.png")
             
         else:
             print(f"ROBOT: UNKNOWN MODE '{mode}'")
@@ -175,16 +149,14 @@ class Robot():
 
 
     def train_AL(self, epochs, batch_size):
-        query_size = 32
-        iterations = max(len(self.X_train) // query_size, 20)
+        iterations = 20
+        query_size = 128
 
         X = self.X_train
         y = np.array(list(map(self.dataset.to_classlist, self.y_train)))
         y_valid_classlist = np.array(list(map(self.dataset.to_classlist, self.y_valid)))
-        # models = [VGG16(weights=None, classes=3) for _ in range(iterations)]
-        # [model.compile(optimizer=Adam(learning_rate=0.001), loss=categorical_crossentropy, metrics=['accuracy']) for model in models]
-        model = VGG16(weights=None, classes=3)
-        model.compile(optimizer=Adam(learning_rate=0.001), loss=categorical_crossentropy, metrics=['accuracy'])
+        models = [VGG16(weights=None, classes=3) for _ in range(iterations)]
+        [model.compile(optimizer=Adam(learning_rate=0.001), loss=categorical_crossentropy, metrics=['accuracy']) for model in models]
         
         # train first model
         idxs = [i for i in range(query_size)]
@@ -192,32 +164,32 @@ class Robot():
         y_train = y[idxs]
         X = np.delete(X, idxs, axis=0)
         y = np.delete(y, idxs, axis=0)
-        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(self.X_valid, y_valid_classlist))
-        self.model = model
+        models[0].fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(self.X_valid, y_valid_classlist))
+        p = models[0].predict(X)
+        self.model = models[0]
         self.test()
-        self.confusion_matrix(f"al-learn-confusion-matrix-{0}"+ str(datetime.now().isoformat("-", "minutes")) + ".png")
+        self.confusion_matrix(f"al-learn-confusion-matrix-{0}.png")
 
         for i in range(1, iterations):
             print(f"iteration {i}, {X.shape[0]} samples left")
-            p = model.predict(X)
+            
             idxs = np.max(p, axis=1).argsort()[:query_size]
             X_train = np.concatenate((X_train, X[idxs]))
             y_train = np.concatenate((y_train, y[idxs]))
             X = np.delete(X, idxs, axis=0)
             y = np.delete(y, idxs, axis=0)
-            model = VGG16(weights=None, classes=3)
-            model.compile(optimizer=Adam(learning_rate=0.001), loss=categorical_crossentropy, metrics=['accuracy'])
-            model.fit(
+            models[i].fit(
                 x=X_train,
                 y=y_train, 
                 epochs=epochs, 
                 batch_size=batch_size, 
                 validation_data=(self.X_valid, y_valid_classlist))
-            self.model = model
+            p = models[i].predict(X)
+            self.model = models[i]
             self.test()
-            self.confusion_matrix(f"al-learn-confusion-matrix-{i}-{str(datetime.now().isoformat('-', 'minutes'))}.png")
+            self.confusion_matrix(f"al-learn-confusion-matrix-{i}.png")
             
-        self.model = model
+        self.model = models[-1]
         print(f"Used samples: {iterations*query_size}")
 
         
