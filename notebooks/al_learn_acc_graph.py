@@ -35,7 +35,7 @@ if __name__ == "__main__":
             plt.xlabel("Used samples")
             plt.ylabel("Accuracy")
             plt.plot([sum(m.used) for m in models], [m.acc for m in models])
-            plt.savefig("results/al_lear/al_learn_acc_graph.png")
+            plt.savefig("results/al_learn/al_learn_acc_graph.png")
     
     elif mode == "load":
         datafile = "results/al_learn/al_learn_acc_graph_checkpoints.txt"
