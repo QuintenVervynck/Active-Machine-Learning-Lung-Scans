@@ -1,5 +1,6 @@
 import os
 import zipfile
+from math import ceil
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
@@ -10,7 +11,7 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 
 from keras.applications.vgg16 import VGG16
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.losses import BinaryCrossentropy, categorical_crossentropy, sparse_categorical_crossentropy
+from tensorflow.keras.losses import BinaryCrossentropy, categorical_crossentropy
 from sklearn import metrics
 from tensorflow.keras.models import load_model
 
@@ -43,11 +44,7 @@ class Model():
         self.batch_size=64  # the batch_size used during training        
         
         # create the internal model
-        if architecture == "vgg16":
-            self.model = VGG16(weights=None, classes=3)
-            self.model.compile(optimizer=Adam(learning_rate=0.001), loss=categorical_crossentropy, metrics=['accuracy'])
-        else:
-            raise ValueError(f"model architecture '{architecture}' does not exist.")
+        self.new_model()
         
         # prepare the data
         if self.dataset is None:
@@ -61,6 +58,16 @@ class Model():
     def __repr__(self):
         return f"<Model {self.architecture}: used {sum(self.used)} {self.used}, acc {self.acc}>"
     
+    def new_model(self):
+        if self.architecture == "vgg16":
+            self.model = VGG16(include_top=True, weights=None, classes=3)
+            self.model.compile(optimizer=Adam(learning_rate=0.0001), loss=categorical_crossentropy, metrics=['accuracy'])
+        else:
+            raise ValueError(f"architecture {self.architecture} not supported")
+        self.used = [0, 0, 0]
+        self.acc = 0.0
+        return self
+
     def limit_training_data(self, size):
         self.X_train = self.X_train[:size]
         self.y_train = self.y_train[:size]
@@ -86,6 +93,9 @@ class Model():
         return self
     
     def test(self):
+        """
+        Test the model on the test-set
+        """
         if any([var is None for var in [self.model, self.X_test, self.y_test]]):
             raise ValueError(f"model not properly instantiated")
         self.p_test = np.array(list(map(self.dataset.from_classlist, self.model.predict(self.X_test))))
@@ -110,6 +120,41 @@ class Model():
         )
         return self
     
+    def train_al(self, max_imgs:int, strategy, query_size:int=32, iterations:int=0):
+        """
+        Train the model on the active learning set
+        """
+        if any([var is None for var in [self.model, self.X_train, self.X_valid, self.y_train, self.y_valid]]):
+            raise ValueError(f"model not properly instantiated")
+        if iterations == 0:
+            iterations = ceil(max_imgs / query_size)
+
+        X_pool = self.X_train
+        y_pool = self.y_train
+        self.X_train = np.ndarray((0,224,224,3))
+        self.y_train = np.ndarray((0), dtype=int)
+        self.size = 0
+
+        for i in range(iterations):
+            imgs = np.min([query_size, (max_imgs - query_size*i)])
+            print(f"iteration {i+1}/{iterations}, training on {imgs} images (max {max_imgs})")
+            # ask the query strategy for query_size indexes to label, or the remaining amount of images
+            idxs = strategy(self.model, X_pool, imgs)
+            # get new model
+            self.new_model()  # clears what images were used
+            # move the selected images to the training set
+            self.X_train = np.append(self.X_train, X_pool[idxs], axis=0)
+            self.y_train = np.append(self.y_train, y_pool[idxs], axis=0)
+            # remove the selected images from the pool
+            X_pool = np.delete(X_pool, idxs, axis=0)
+            y_pool = np.delete(y_pool, idxs, axis=0)
+            # update size
+            self.size += len(idxs)
+            # train the model
+            self.train()  # fills in which images were used
+
+        return self
+
     def clean(self):
         self.model = None
         self.X_train = None
@@ -127,7 +172,11 @@ class Model():
         self.dataset = None  # used for histogram used classes
         return self
     
+
     def confusion_matrix(self, loc='confusion_matrix.png'):
+        """
+        Creates a confusion matrix of the model.
+        """
         if any([var is None for var in [self.p_test, self.y_test]]):
             raise ValueError(f"model not properly instantiated")
         p_labels = np.array(list(map(self.dataset.to_label, self.p_test)))
@@ -137,6 +186,9 @@ class Model():
         plt.savefig(loc)
 
     def histogram_used_classes(self, loc='used_classes.png'):
+        """
+        Creates a histogram of the used classes.
+        """
         # Show histogram of used classes
         if any([var is None for var in [self.dataset, self.used]]):
             raise ValueError(f"model not properly instantiated")

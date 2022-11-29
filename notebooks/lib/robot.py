@@ -196,8 +196,8 @@ class Robot():
         self.test()
         self.confusion_matrix(f"al-learn-conf-{0}-{str(datetime.now().isoformat('-', 'minutes'))}.png")
 
-        for i in range(1, iterations):
-            print(f"iteration {i}, {X.shape[0]} samples left")
+        for i in range(iterations):
+            print(f"al-loop: iteration {i+1}/{iterations}, {X.shape[0]} samples left")
             p = model.predict(X)
             idxs = np.max(p, axis=1).argsort()[:query_size]
             for x in self.y_train[idxs]:
