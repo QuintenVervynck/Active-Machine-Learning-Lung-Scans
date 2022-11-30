@@ -98,7 +98,8 @@ class Model():
         """
         if any([var is None for var in [self.model, self.X_test, self.y_test]]):
             raise ValueError(f"model not properly instantiated")
-        self.p_test = np.array(list(map(self.dataset.from_classlist, self.model.predict(self.X_test))))
+        print(f"model: predicting...")
+        self.p_test = np.array(list(map(self.dataset.from_classlist, self.model.predict(self.X_test, verbose=0))))
         count = 0
         for i in range(self.p_test.shape[0]):
             if self.p_test[i] == self.y_test[i]:
@@ -109,6 +110,7 @@ class Model():
     def train(self):
         if any([var is None for var in [self.model, self.X_train, self.X_valid, self.y_train, self.y_valid]]):
             raise ValueError(f"model not properly instantiated")
+        print(f"model: training...")
         for x in self.y_train:
             self.used[x] += 1
         self.model.fit(
@@ -116,7 +118,8 @@ class Model():
             y=np.array(list(map(self.dataset.to_classlist, self.y_train))), 
             epochs=self.epochs,
             batch_size=self.batch_size,
-            validation_data=(self.X_valid, np.array(list(map(self.dataset.to_classlist, self.y_valid))))
+            validation_data=(self.X_valid, np.array(list(map(self.dataset.to_classlist, self.y_valid)))),
+            verbose=0
         )
         return self
     
