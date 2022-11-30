@@ -1,76 +1,75 @@
-import numpy as np
-from matplotlib import pyplot as plt
-import os
-import time 
-
 from lib.dataset import Dataset
-from lib.model import Model
-from lib.queries import random, uncertainty, margin, entropy
+# the dataset
+dataset = Dataset()
 
 
 # the query strategies to try
+
+from lib.queries import random, uncertainty, margin, entropy
 qss = [("random", random), ("uncertainty", uncertainty), ("margin", margin), ("entropy", entropy)]
+
+
 # the amount of images the query strategy sould return in each iteration
+
 query_size = 25
 
-# create the files for the results
+
+# create the files for the results for each query strategy
+
+import os
 for qs_name, _ in qss:
-    # check if the directory qs_name exists
     if not os.path.exists(f"results/al_learn/{qs_name}"):
         os.mkdir(f"results/al_learn/{qs_name}")
     if not os.path.exists(f"results/al_learn/{qs_name}/checkpoints.txt"):
         with open(f"results/al_learn/{qs_name}/checkpoints.txt", "w") as f:
             f.write("")
+            
 
+# we now train models for every query strategy, and save accuracy data along the way
 
-# the dataset
-dataset = Dataset()
-
-steps = [i for i in range(query_size, 3200, query_size)]
-
+import time 
+from lib.activelearner import ActiveLearner
+# variables for colored output
 OKCYAN = '\033[96m'
 ENDC = '\033[0m'
 
+query_size = 32
+max_train_imgs = 512  # dataset has 3429 in training set
+epochs = 8
+batch_size = 16
 
 for i, (name, qs) in enumerate(qss):
     time_start = time.time()
+    
     accs = []
-    model = Model("vgg16", dataset).set_epochs(10).set_batch_size(16)
-    X_pool = model.X_train
-    y_pool = model.y_train
-    model.X_train = None
-    model.y_train = None
+    
+    active_learner = ActiveLearner(dataset, architecture="vgg16").with_params(epochs, batch_size)
+    
+    # the steps we will take (steps over the size of the data)
+    steps = [i for i in range(query_size, max_train_imgs+1, query_size)]
+    
     for j, max_imgs in enumerate(steps):
         time_round_start = time.time()
         print(f"{OKCYAN}<{name} ({i+1}/{len(qss)}) | using {max_imgs} images ({j+1}/{len(steps)})>{ENDC}")
-        imgs = np.min([query_size, (max_imgs - sum(model.used))])
-        print(f"model: using query strategy to select {imgs} images")
-        idxs = qs(model.model, X_pool, imgs)
-        # move the selected images to the training set
-        model.X_train = X_pool[idxs]
-        model.y_train = y_pool[idxs]
-        # remove the selected images from the pool
-        X_pool = np.delete(X_pool, idxs, axis=0)
-        y_pool = np.delete(y_pool, idxs, axis=0)
-        # train the model
-        model.train()
-        # test the model
-        model.test()
         
-        # save metrics
-        accs.append(model.acc)
+        # select less samples if we can't select the full query_size anymore
+        n = min([query_size, (max_imgs - sum(active_learner.used))])
 
+        # select samples
+        active_learner.select_samples(qs, n)
+
+        # train the model
+        active_learner.train()
+
+        # test the model
+        active_learner.test()
+
+        # save metrics to file
         with open(f"results/al_learn/{name}/checkpoints.txt", "a") as f:
-            f.write(f"{str(model)}\n")
-        plt.suptitle(f"Accuracy graph (VGG16 - {name})")
-        plt.xlabel("Used samples")
-        plt.ylabel("Accuracy")
-        plt.plot(steps[:j+1], accs)
-        plt.savefig(f"results/al_learn/{name}/acc_graph.png")
-        plt.clf()
-        
+            f.write(f"{str(active_learner)}\n")
+
         time_round = int(time.time() - time_round_start) // 60
         time_total = int(time.time() - time_start) // 60
-        
+
         print(f"{OKCYAN}----> finished round in {time_round} mins  (total run time for {name}: {time_total} mins){ENDC}")
-    
+
