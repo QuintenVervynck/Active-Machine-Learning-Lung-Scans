@@ -5,25 +5,13 @@ import time
 
 from lib.dataset import Dataset
 from lib.model import Model
+from lib.queries import random, uncertainty, margin, entropy
 
 
-def random(model, X_pool, query_size):
-    query_size = min(query_size, X_pool.shape[0])
-    # select random indexes
-    idxs = np.random.choice(X_pool.shape[0], query_size, replace=False)
-    return idxs
-
-
-def uncertainty(model, X_pool, query_size):
-            query_size = min(query_size, X_pool.shape[0])
-            # get predictions on remaining training data
-            p_pool = model.predict(X_pool, verbose=0)
-            # get indexes of most uncertain predictions) (if the max is low, then the prediction is uncertain)
-            idxs = np.max(p_pool, axis=1).argsort()[:query_size]
-            return idxs
-
-qss = [("random", random), ("uncertainty", uncertainty)]
-
+# the query strategies to try
+qss = [("random", random), ("uncertainty", uncertainty), ("margin", margin), ("entropy", entropy)]
+# the amount of images the query strategy sould return in each iteration
+query_size = 25
 
 # create the files for the results
 for qs_name, _ in qss:
@@ -35,11 +23,9 @@ for qs_name, _ in qss:
             f.write("")
 
 
-
+# the dataset
 dataset = Dataset()
 
-
-query_size = 25
 steps = [i for i in range(query_size, 3200, query_size)]
 
 OKCYAN = '\033[96m'
@@ -66,8 +52,6 @@ for i, (name, qs) in enumerate(qss):
         # remove the selected images from the pool
         X_pool = np.delete(X_pool, idxs, axis=0)
         y_pool = np.delete(y_pool, idxs, axis=0)
-        # update size
-        model.size = len(idxs)
         # train the model
         model.train()
         # test the model

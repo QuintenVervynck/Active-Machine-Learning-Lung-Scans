@@ -1,6 +1,13 @@
 import numpy as np
 
 
+def random(model, X_pool, query_size):
+    query_size = min(query_size, X_pool.shape[0])
+    # select random indexes
+    idxs = np.random.choice(X_pool.shape[0], query_size, replace=False)
+    return idxs
+
+
 def uncertainty(model, X_pool, query_size):
     query_size = min(query_size, X_pool.shape[0])
     # get predictions on remaining training data

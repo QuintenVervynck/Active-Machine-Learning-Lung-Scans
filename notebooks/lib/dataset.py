@@ -31,6 +31,14 @@ class Dataset():
             self.save()
         else:
             self.load()
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                self.X, 
+                self.y, 
+                train_size=0.85, 
+                shuffle=True,
+                random_state=42
+            )
+            self.size = self.X_train.shape[0]
             
         print("Finished")
             
@@ -166,23 +174,4 @@ class Dataset():
         self.y = np.load(f"{self.path}/y.npy")
     
     def split(self):
-        # Split the dataset in training and test data
-        # The data is found in self.X and self.y
-        X_train, X_rem, y_train, y_rem = train_test_split(
-            self.X, 
-            self.y, 
-            train_size=0.8, 
-            shuffle=True,
-            random_state=42)
-        X_valid, X_test, y_valid, y_test = train_test_split(
-            X_rem,
-            y_rem,
-            train_size=0.5,
-            shuffle=True,
-            random_state=42)
-        
-        print(f"X_train shape: {X_train.shape}")
-        print(f"X_valid & X_test shape: {X_test.shape}")
-        print(f"y_train shape: {y_train.shape}")
-        print(f"y_valid & y_test shape: {y_test.shape}")
-        return X_train, X_valid, X_test, y_train, y_valid, y_test
+        return self.X_train, self.X_test, self.y_train, self.y_test
