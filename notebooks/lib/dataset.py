@@ -7,13 +7,16 @@ from sklearn.model_selection import train_test_split
 os.environ['KAGGLE_USERNAME'] = 'dumpstertrash'
 os.environ['KAGGLE_KEY'] = 'fc29a78761d58a50c7b50d71f3f3a3f2'
 from kaggle.api.kaggle_api_extended import KaggleApi
+from lib.xray.clahe import CLAHE
 
 
 class Dataset():
-    def __init__(self):
+    def __init__(self, enhance_data=False):
         self.path = "./dataset"
+        self.enhanced = "./enhanced"
         self.subfolders = ["COVID/", "Normal/", "Viral Pneumonia/"]
         self.versions = ["images", "masks"]
+        self.class_length = 1345
         self.data = {}
         self.size = 0
         self.names = ["COVID", "Normal", "Viral Pneumonia"]
@@ -22,23 +25,46 @@ class Dataset():
         self.y = None
         
         if not os.path.isdir(self.path):
-            self.download()
-        
-        if not os.path.isfile(f"{self.path}/x.npy") or not os.path.isfile(f"{self.path}/y.npy"):
+            self.download()   
             self.load_local()
             self.restrict_size_per_class()
-            self.prepare_images()
-            self.save()
+        
+
+        if enhance_data:
+            if not os.path.isfile(f"{self.enhanced}/x.npy") or not os.path.isfile(f"{self.enhanced}/y.npy"):
+                print(f"Enhancing dataset")
+                if not len(self.data):
+                    self.load_local()
+                self.enhance_images()
+                self.load_local(f"{self.enhanced}/COVID-19_Radiography_Dataset/")
+                self.prepare_images()
+                self.save(path=self.enhanced)
+            else:
+                self.load(path=self.enhanced)
+                self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                    self.X, 
+                    self.y, 
+                    train_size=0.85, 
+                    shuffle=True,
+                    random_state=42
+                )
+                self.size = self.X_train.shape[0]
         else:
-            self.load()
-            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-                self.X, 
-                self.y, 
-                train_size=0.85, 
-                shuffle=True,
-                random_state=42
-            )
-            self.size = self.X_train.shape[0]
+            if not os.path.isfile(f"{self.path}/x.npy") or not os.path.isfile(f"{self.path}/y.npy"):
+                if not len(self.data):
+                    self.load_local()
+                self.prepare_images()
+                self.save()
+            else:
+                self.load()
+                self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                    self.X, 
+                    self.y, 
+                    train_size=0.85, 
+                    shuffle=True,
+                    random_state=42
+                )
+                self.size = self.X_train.shape[0]
             
         print("Finished")
             
@@ -70,14 +96,15 @@ class Dataset():
             with zipfile.ZipFile(f"{self.path}/covid19-radiography-database.zip","r") as zip_ref:
                 zip_ref.extractall(f"{self.path}/")
         
-    def load_local(self):
+    def load_local(self, path=""):
         print("Loading local files...")
         # Three main subfolders: COVID, Normal, Viral Pneumonia
-        path = f"{self.path}/COVID-19_Radiography_Dataset/"
+        path_img = f"{self.path}/COVID-19_Radiography_Dataset/" if not path else path
+        path_msk = f"{self.path}/COVID-19_Radiography_Dataset/"
         # Every subfolder has images and their masks
         for subfolder in self.subfolders:
-            self.data[subfolder + "images"] = [path + subfolder + "images/" + image for image in os.listdir(path + subfolder + "images")]
-            self.data[subfolder + "masks"] = [path + subfolder + "masks/" + image for image in os.listdir(path + subfolder + "masks")]
+            self.data[subfolder + "images"] = [path_img + subfolder + "images/" + image for image in os.listdir(path_img + subfolder + "images")]
+            self.data[subfolder + "masks"] = [path_msk + subfolder + "masks/" + image for image in os.listdir(path_msk + subfolder + "masks")]
             print(f"  Number of images in {subfolder}: {len(self.data[subfolder + 'images'])}")
             print(f"  Number of masks in {subfolder}: {len(self.data[subfolder + 'masks'])}")
             self.size += len(self.data[subfolder + 'images'])
@@ -99,17 +126,23 @@ class Dataset():
             ax.set_axis_off()
             ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
             ax.set_title("%s" % label.split("/")[-1])
-    def restrict_size_per_class(self, size=1345):
-        print("Restricting the number of images per class...")
-        self.size = 3*size
-        print("  Old sizes:")
-        for subfolder in self.subfolders:
-            print(f"   - {subfolder}: {len(self.data[subfolder + 'images'])}")
-            self.data[subfolder + "images"] = self.data[subfolder + "images"][:size]
-        print("  New sizes:")
-        for subfolder in self.subfolders:
-            print(f"   - {subfolder}: {len(self.data[subfolder + 'images'])}")
     
+    def restrict_size_per_class(self, size=1345):
+        # Remove images larger than 1345
+        print(f"Removing all images greater than {self.class_length}")
+        for subfolder in self.subfolders:
+            for version in self.versions:
+                file_list = self.data[subfolder + version]
+                file_list.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
+
+                failed = []
+                for file_path in file_list[self.class_length:]:
+                    try:
+                        os.remove(file_path)
+                    except:
+                        failed.append(file_path)
+                        print("Error while deleting file : ", file_path)
+                self.data[subfolder + version] = file_list[:self.class_length] + failed    
     
     def prepare_images(self):
         """
@@ -157,21 +190,43 @@ class Dataset():
         self.X = X
         self.y = y
         return (X,y)
+
+    def enhance_images(self):
+        for subfolder in self.subfolders:
+            print(f"Enhancing: {self.enhanced}/COVID-19_Radiography_Dataset/{subfolder}images")
+            os.makedirs(f"{self.enhanced}/COVID-19_Radiography_Dataset/{subfolder}images", exist_ok=True)
+
+            for file_path in self.data[subfolder + "images"]:
+                
+                alg = CLAHE(file_path, f"{self.enhanced}/COVID-19_Radiography_Dataset/{subfolder}images", 100, 150, 1)
+                alg.run()
+
+    def enhance(self):
+        if not os.path.isdir(self.enhanced):
+            print(f"Enhancing dataset")
+            if not len(self.data):
+                self.load_local()
+            self.enhance()
+            self.load_local(f"{self.enhanced}/COVID-19_Radiography_Dataset/")
+            self.prepare_images()
+            self.save()
     
     def show_processed_example(self):
         print(f"Example image with label {self.to_label(self.y[0])}:")
         plt.imshow(self.X[0])
     
               
-    def save(self):
+    def save(self, path=""):
+        path = self.path if not path else path
         print(f"Saving the preprocessed dataset...")
-        np.save(f"{self.path}/x", self.X)
-        np.save(f"{self.path}/y", self.y)
+        np.save(f"{path}/x", self.X)
+        np.save(f"{path}/y", self.y)
               
-    def load(self):
+    def load(self, path=""):
+        path = self.path if not path else path
         print(f"Loading local preprocessed dataset...")
-        self.X = np.load(f"{self.path}/x.npy")
-        self.y = np.load(f"{self.path}/y.npy")
+        self.X = np.load(f"{path}/x.npy")
+        self.y = np.load(f"{path}/y.npy")
     
     def split(self):
         return self.X_train, self.X_test, self.y_train, self.y_test
