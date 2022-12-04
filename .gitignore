@@ -1,7 +1,7 @@
 notebooks/fmnist
 **/__pycache__/*
-dataset/
-enhanced/
+notebooks/dataset/
+notebooks/enhanced/
 models/
 .DS_Store
 .ipynb_checkpoints
