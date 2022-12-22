@@ -2,7 +2,7 @@
 
 ## Abstract
 In this paper we'll use pool-based active machine learning
-to try to reduce the amound of labeled images that are 
+to try to reduce the amount of labeled images that are 
 needed for lung disease recognition. We'll test and 
 compare different query strategies, and experiment with 
 enhancing the images.
