@@ -44,6 +44,6 @@ The minimal directory structure needed to run the notebook should look like this
 │   └── y.npy
 └── report.ipynb
 ```
-Note that because the `x.npy` and `y.npy` files are already here, you do not need to run any of the initial setup functions (which take a long time if you do decide to run them).
+Note that because the `x.npy` and `y.npy` files are already here, you do not need to run any of the initial setup functions in the notebook (which take a long time if you do decide to run them).
 
 
