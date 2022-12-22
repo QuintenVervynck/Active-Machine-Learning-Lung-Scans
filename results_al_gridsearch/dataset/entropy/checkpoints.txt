@@ -1,0 +1,16 @@
+<|AL|epochs|16|batch_size|8|used|16|[7, 5, 4]|acc|0.6963696369636964|>
+<|AL|epochs|16|batch_size|16|used|32|[14, 10, 8]|acc|0.7673267326732673|>
+<|AL|epochs|16|batch_size|16|used|48|[20, 18, 10]|acc|0.7953795379537953|>
+<|AL|epochs|16|batch_size|16|used|64|[25, 23, 16]|acc|0.8316831683168316|>
+<|AL|epochs|8|batch_size|16|used|80|[31, 30, 19]|acc|0.806930693069307|>
+<|AL|epochs|16|batch_size|16|used|96|[35, 35, 26]|acc|0.8547854785478548|>
+<|AL|epochs|16|batch_size|16|used|112|[40, 38, 34]|acc|0.8432343234323433|>
+<|AL|epochs|8|batch_size|16|used|128|[47, 43, 38]|acc|0.8366336633663366|>
+<|AL|epochs|16|batch_size|16|used|144|[49, 52, 43]|acc|0.8663366336633663|>
+<|AL|epochs|8|batch_size|16|used|160|[55, 56, 49]|acc|0.8762376237623762|>
+<|AL|epochs|8|batch_size|16|used|176|[61, 60, 55]|acc|0.8712871287128713|>
+<|AL|epochs|16|batch_size|8|used|192|[67, 64, 61]|acc|0.8663366336633663|>
+<|AL|epochs|8|batch_size|8|used|208|[72, 68, 68]|acc|0.8877887788778878|>
+<|AL|epochs|16|batch_size|16|used|224|[80, 73, 71]|acc|0.8646864686468647|>
+<|AL|epochs|8|batch_size|16|used|240|[84, 79, 77]|acc|0.8844884488448845|>
+<|AL|epochs|16|batch_size|16|used|256|[88, 85, 83]|acc|0.900990099009901|>
