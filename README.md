@@ -8,7 +8,7 @@ compare different query strategies, and experiment with
 enhancing the images.
 
 ## Setup
-Make sure to you unzip all files in `/dataset` and `/enhanced`, the directory structure should look like this:
+Make sure to you unzip all files in `/dataset` and `/enhanced`, the minimal directory structure should look like this:
 ```
 .
 ├── dataset
@@ -18,23 +18,20 @@ Make sure to you unzip all files in `/dataset` and `/enhanced`, the directory st
 │   ├── Normal
 │   │   ├── images
 │   │   └── masks
-│   ├── Viral Pneumonia
+│   └── Viral Pneumonia
+│       ├── images
+│       └── masks
+├── enhanced
+│   ├── COVID
 │   │   ├── images
 │   │   └── masks
-│   ├── x.npy
-│   └── y.npy
-└── enhanced
-    ├── COVID
-    │   ├── images
-    │   └── masks
-    ├── Normal
-    │   ├── images
-    │   └── masks
-    ├── Viral Pneumonia
-    │   ├── images
-    │   └── masks
-    ├── x.npy
-    └── y.npy
+│   ├── Normal
+│   │   ├── images
+│   │   └── masks
+│   └── Viral Pneumonia
+│       ├── images
+│       └── masks
+└── report.ipynb
 ```
 Note that the `x.npy` and `y.npy` files are only there after running the initialization functions in the notebook.
 
