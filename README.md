@@ -1,5 +1,10 @@
 # How can active learning solve the lack of labeled images for lung disease recognition
 
+### Authors
+Koen Desplenter, Quinten Vervynck
+
+#### https://github.com/QuintenVervynck/mlal
+
 ## Abstract
 In this paper we'll use pool-based active machine learning
 to try to reduce the amount of labeled images that are 
@@ -8,7 +13,9 @@ compare different query strategies, and experiment with
 enhancing the images.
 
 ## Setup
-Make sure to you unzip all files in `/dataset` and `/enhanced`, the minimal directory structure should look like this:
+Make sure to you unzip all files in `/dataset` and `/enhanced` (some are 7z, watch out).
+
+The minimal directory structure needed to run the notebook should look like this:
 ```
 .
 ├── dataset
@@ -18,9 +25,11 @@ Make sure to you unzip all files in `/dataset` and `/enhanced`, the minimal dire
 │   ├── Normal
 │   │   ├── images
 │   │   └── masks
-│   └── Viral Pneumonia
-│       ├── images
-│       └── masks
+│   ├── Viral Pneumonia
+│   │   ├── images
+│   │   └── masks
+│   ├── x.npy
+│   └── y.npy
 ├── enhanced
 │   ├── COVID
 │   │   ├── images
@@ -28,14 +37,13 @@ Make sure to you unzip all files in `/dataset` and `/enhanced`, the minimal dire
 │   ├── Normal
 │   │   ├── images
 │   │   └── masks
-│   └── Viral Pneumonia
-│       ├── images
-│       └── masks
+│   ├── Viral Pneumonia
+│   │   ├── images
+│   │   └── masks
+│   ├── x.npy
+│   └── y.npy
 └── report.ipynb
 ```
-Note that the `x.npy` and `y.npy` files are only there after running the initialization functions in the notebook.
+Note that because the `x.npy` and `y.npy` files are already here, you do not need to run any of the initial setup functions (which take a long time if you do decide to run them).
 
-### Contributors
-Koen Desplenter, Quinten Vervynck
 
-#### https://github.com/QuintenVervynck/mlal
