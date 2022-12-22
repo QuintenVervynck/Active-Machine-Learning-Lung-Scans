@@ -3,7 +3,7 @@
 ### Authors
 Koen Desplenter, Quinten Vervynck
 
-#### https://github.com/QuintenVervynck/mlal
+#### https://github.com/QuintenVervynck/Active-Machine-Learning-Lung-Scans
 
 ## Abstract
 In this paper we'll use pool-based active machine learning
