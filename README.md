@@ -7,8 +7,38 @@ needed for lung disease recognition. We'll test and
 compare different query strategies, and experiment with 
 enhancing the images.
 
+## Setup
+Make sure to you unzip all files in `/dataset` and `/enhanced`, the directory structure should look like this:
+```
+.
+├── dataset
+│   ├── COVID
+│   │   ├── images
+│   │   └── masks
+│   ├── Normal
+│   │   ├── images
+│   │   └── masks
+│   ├── Viral Pneumonia
+│   │   ├── images
+│   │   └── masks
+│   ├── x.npy
+│   └── y.npy
+└── enhanced
+    ├── COVID
+    │   ├── images
+    │   └── masks
+    ├── Normal
+    │   ├── images
+    │   └── masks
+    ├── Viral Pneumonia
+    │   ├── images
+    │   └── masks
+    ├── x.npy
+    └── y.npy
+```
+Note that the `x.npy` and `y.npy` files are only there after running the initialization functions in the notebook.
 
-#### Contributors
+### Contributors
 Koen Desplenter, Quinten Vervynck
 
-##### https://github.com/QuintenVervynck/mlal
+#### https://github.com/QuintenVervynck/mlal
