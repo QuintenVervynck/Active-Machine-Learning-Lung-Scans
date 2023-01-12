@@ -1,9 +1,9 @@
+[Github](https://github.com/QuintenVervynck/Active-Machine-Learning-Lung-Scans), [pdf](./article.pdf), [Notebook](./report.ipynb)
+
 # How can active learning solve the lack of labeled images for lung disease recognition
 
 ### Authors
 Koen Desplenter, Quinten Vervynck
-
-#### https://github.com/QuintenVervynck/Active-Machine-Learning-Lung-Scans
 
 ## Abstract
 In this paper we'll use pool-based active machine learning
